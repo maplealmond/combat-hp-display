@@ -1,7 +1,7 @@
 import { translateCustomDisplayModes, getDisplayMode } from '../scripts/combat-hp-display-helpers.js';
 
 export const startCombatUpdate = async (combat) => {
-    if(game.user.isGM && combat.previous.round === 0 && combat.current.round === 1){
+    if(game.user.isGM){
         const gridSettings = await game.settings.get('combat-hp-display', 'grid-display');
         if(gridSettings.enabled && game.canvas.scene){
             await game.canvas.scene.update({ 'grid.alpha': gridSettings.opacity });
@@ -58,35 +58,27 @@ const diplayBarUpdate = async (combatant, inCombat) => {
     }
 };
 
+export const restoreDisplayBars = (combat) => {
+    if (!game.user.isGM) return;
+    const combatants = Array.from(combat.combatants);
+    for (const combatant of combatants) {
+        if (game.modules.get("barbrawl")?.active) {
+            combatant.token.update({
+                "flags.barbrawl.resourceBars": combatant.token.flags["combat-hp-display-bar-brawl-bars"],
+            });
+        } else {
+            const prior = combatant.token.getFlag('combat-hp-display', 'displayBars');
+            if (prior !== undefined && prior !== null) {
+                combatant.token.update({ displayBars: prior });
+            }
+        }
+    }
+};
+
 export const deleteCombatUpdate = async (combat) => {
     const gridSettings = await game.settings.get('combat-hp-display', 'grid-display');
     if(gridSettings.enabled){
         await game.canvas.scene.update({ 'grid.alpha': 0 });
-    }
-
-    const combatants = Array.from(combat.combatants);
-    await updateDisplayMode(combatants);
-}
-
-const updateDisplayMode = async (combatants) => {
-    for(var i = 0; i < combatants.length; i++) {
-        const combatant = combatants[i];
-        if(game.modules.get("barbrawl")?.active){
-            if(game.user.isGM){
-                await combatant.token.update({
-                    "flags.barbrawl.resourceBars": combatant.token.flags["combat-hp-display-bar-brawl-bars"],
-                });
-            }
-            else {
-                combatant.token.object.hud.bars.removeChildren();
-            }
-        }
-        else if(game.user.isGM){
-            const prior = combatant.token.getFlag('combat-hp-display', 'displayBars');
-            if (prior !== undefined && prior !== null) {
-                combatant.token.update({displayBars: prior });
-            }
-        }
     }
 }
 

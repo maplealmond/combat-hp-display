@@ -1,5 +1,5 @@
 import { registerGameSettings, migrateDataStructures } from './scripts/setup.js';
-import { deleteCombatUpdate, startCombatUpdate, joinCombatUpdate } from './module/DisplayBarHandler.js';
+import { deleteCombatUpdate, restoreDisplayBars, startCombatUpdate, joinCombatUpdate } from './module/DisplayBarHandler.js';
 
 Hooks.once('init', function() {
     registerGameSettings();
@@ -13,8 +13,12 @@ Hooks.on('createCombatant', async combatant => {
     await joinCombatUpdate(combatant);
 });
 
-Hooks.on('updateCombat', async combat => {
+Hooks.on('combatStart', async (combat) => {
     await startCombatUpdate(combat);
+});
+
+Hooks.on('preDeleteCombat', combat => {
+    restoreDisplayBars(combat);
 });
 
 Hooks.on('deleteCombat', async combat => {
